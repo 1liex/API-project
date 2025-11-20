@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "username": "yaser",
+        "email": "yy@gmail.com",
+        "password": "123",
+        "post": [
+            {
+                "post_id": 1,
+                "post_title": "this is post 1"
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "username": "ti",
+        "email": "tt@gmail.com",
+        "password": "123",
+        "post": [
+            {
+                "post_id": 1,
+                "post_title": "this is post 1"
+            }
+        ]
+    }
+]
