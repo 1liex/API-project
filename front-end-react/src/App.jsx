@@ -8,7 +8,7 @@ import Signup from './Components/Signup'
 
 
 export default function App() {
-  const [userLogin, setUserLogin] = useState(false)
+  const [userLogin, setUserLogin] = useState(null)
   const [data, setData] = useState([])
   const [currentPage, setCurrentPage] = useState("login")
 
@@ -22,6 +22,8 @@ export default function App() {
       const data = await res.json()
       setData(data)
       setUserLogin(true)
+    }else{
+      setUserLogin(false)
     }
 
   }
@@ -37,8 +39,8 @@ export default function App() {
       <section>
 
 
-        {!userLogin && currentPage === "login" && <Login checkLogin={getData} />}
-        {!userLogin && currentPage === "signup" && <Signup checkLogin={getData}/>}
+        {userLogin === false && currentPage === "login" && <Login checkLogin={getData} />}
+        {userLogin === false && currentPage === "signup" && <Signup checkLogin={getData}/>}
         {userLogin && <Homepage data={data} />}
       </section>
     </>
