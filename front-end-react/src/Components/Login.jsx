@@ -1,21 +1,28 @@
 import { useState } from "react"
 
 
-export default function Login({ checkLogin }) {
+export default function Login({ setShowTfa }) {
     const [un, setUn] = useState("")
     const [pw, setPw] = useState("")
 
 
     async function login(username, password) {
-        const res = await fetch("http://127.0.0.1:5000/login", {
+        if (un === "" || pw === "") {
+            alert("no empty")
+            return
+        }
+
+        const res = await fetch("http://127.0.0.1:5000/tfa", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({ username, password })
         })
         const data = await res.json()
-        if (data.msg === "log in successful") {
-            checkLogin()
+
+        if (data.msg === "Verification code has been sent") {
+            alert(data.msg)
+            setShowTfa(true)
         } else {
             alert(data.msg)
         }
@@ -26,7 +33,6 @@ export default function Login({ checkLogin }) {
     return (
 
         <>
-
             <form onSubmit={(e) => { e.preventDefault(); login(un, pw) }}>
                 <h2>Log In</h2>
                 <div className="label">
@@ -44,7 +50,6 @@ export default function Login({ checkLogin }) {
                 </div>
                 <button type="submit" className="login-btn">Submit</button>
             </form>
-
         </>
     )
 }

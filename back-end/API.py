@@ -8,10 +8,17 @@ import json
 import os
 from dotenv import load_dotenv
 import uuid
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 
 #===== FUNCTINS ======
+
+Verification_code = ""
+username_global = ""
+user_id = ""
 
 # db section ======
 
@@ -73,7 +80,6 @@ def create_env_file() -> None:
     
     with open(ENV_PATH, "r") as f:
         data = f.read()
-        print(data)
         if not data:
             with open(ENV_PATH, "w") as f:
                 secret_key = create_secret_key()
@@ -90,7 +96,46 @@ def load_secret_key() -> str:
     return secret_key
 
 
+#2FA section ======
+def two_factor_authentication():
+    import random
 
+    list_num = [i for i in range(0, 10)]
+    digits = [] 
+    for _ in range(6):
+        num = str(random.choice(list_num))
+        digits.append(num) 
+        
+    tfa = "".join(digits) 
+    return tfa 
+
+
+
+def send_email(email):
+    global Verification_code
+    load_dotenv()
+    my_email = os.getenv("EMAIL")
+    pass_key = os.getenv("EMAIL_PASS_KEY")
+    resev_email = email
+    
+    subject = "2FA"
+    Verification_code = two_factor_authentication()
+    
+    msg = MIMEMultipart()
+    msg['From'] = my_email
+    msg["To"] = resev_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(Verification_code, 'plain'))
+    
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(my_email, pass_key)
+            server.sendmail(my_email, resev_email, msg.as_string())
+            return "Verification code has been sent"
+    
+    except Exception as e:
+        return("ERROR:", e)
 
 #===== FLASK =====
 
@@ -109,28 +154,42 @@ jwt = JWTManager(app)
 
 #==== ROUTES =====
 
+
+
 @app.post("/login")
 def login():
     """login, need username and password so it will be post method"""
-    # {"un": "ali", "pw": "123..."}
+    # {"Verification": 123456}
     user_data = request.get_json()
 
+    user_Verification = user_data.get("Verification")
+
+    if user_Verification == Verification_code:
+        access_token = create_access_token(identity=str(user_id))
+        res = jsonify({"msg": "log in successful"})
+        set_access_cookies(res, access_token)
+        return res
+        
+    return jsonify({"msg": "Verification is worg"})            
+
+@app.post("/tfa")
+def get_tfa():
+    global username_global, user_id
+    #{"un": "ali", "pw": "123"}
+    user_data = request.get_json()
     username = user_data.get("username")
     password = user_data.get("password")
 
-
-    db_users = get_data_db()
- 
-    for users in db_users:
-        
-        if username.strip() == users["username"] and password.strip() == users["password"]:
     
-            access_token = create_access_token(identity=str(users["id"]))
-            res = jsonify({"msg": "log in successful"})
-            set_access_cookies(res, access_token)
-            return res
-        
-    return jsonify({"msg": "username or password is wrong"})            
+    data = get_data_db()
+    for data_db in data:
+        if username == data_db.get("username") and password == data_db.get("password"):
+            username_global = username
+            user_id = data_db.get("id")
+            msg =  send_email(data_db.get("email"))
+            return jsonify({"msg": msg})
+
+    return jsonify({"msg": "username or password is wrong"})
 
 
 @app.get("/logout")
@@ -145,12 +204,12 @@ def logout():
 
 @app.post("/signup")
 def sign_up():
-    """signup, need username email and password so it will be post method"""
-    #{"un": "abc", "email": "abc@gmail.com", "pw": "123"}
+    """signup, need username my_email and password so it will be post method"""
+    #{"un": "abc", "my_email": "abc@gmail.com", "pw": "123"}
     user_data = request.get_json()
 
     username = user_data.get("username")
-    email = user_data.get("email")
+    my_email = user_data.get("my_email")
     password = user_data.get("password")
 
 
@@ -161,14 +220,14 @@ def sign_up():
     
 
     for user in users_db:
-        if username == user["username"] or email == user["email"]:
+        if username == user["username"] or my_email == user["my_email"]:
             return jsonify({"msg": "user exist"})
     
 
     new_data = {
         "id": new_id,
         "username": username,
-        "email": email,
+        "my_email": my_email,
         "password": password,
         "post": [
             {

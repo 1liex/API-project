@@ -1,6 +1,6 @@
 
 
-export default function Logout({ setUserLogin }) {
+export default function Logout({ setUserLogin, serOpenMenu }) {
 
     async function logout() {
         const res = await fetch("http://127.0.0.1:5000/logout",
@@ -12,10 +12,11 @@ export default function Logout({ setUserLogin }) {
         const msg = await res.json()
         if (msg.msg === "logput successful") {
             setUserLogin(false)
+            serOpenMenu(false)
         }
     }
 
     return (
-        <button onClick={logout} className="navBtn">Logout</button>
+        <button onClick={logout} className="navBtn logout">Logout</button>
     )
 }
