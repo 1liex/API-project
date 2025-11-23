@@ -1,6 +1,9 @@
 
 
 export default function InfoCard({ data }) {
+    if (!data || !data.post) {
+        return <p>Loading...</p>
+    }
 
     return (
         <>

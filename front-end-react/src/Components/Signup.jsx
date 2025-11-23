@@ -1,29 +1,34 @@
 import { useState } from "react"
 
-export default function Signup({ setLoginForm }) {
-  const [un, setUn] = useState("")
-  const [em, setEm] = useState("")
-  const [pw, setPw] = useState("")
+export default function Signup({ setShowTfa, setSendEmail, setUn, setEm, setPw, un, em, pw }) {
+
   const [showPw, setShowPw] = useState("password")
 
 
-  async function addUser(username, email, password) {
-    const res = await fetch("http://127.0.0.1:5000/signup", {
+  async function checkEmail(email) {
+    if (un === "" || em === "" || pw === "") {
+      alert("Entrys should not be empty")
+      return
+    }
+    const res = await fetch("http://127.0.0.1:5000/tfa_signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ username, email, password })
+      body: JSON.stringify({ email })
     })
 
     const data = await res.json()
-    alert(data.msg)
-    setLoginForm("login")
+    if (data.msg === "Verification code has been sent") {
+      alert(data.msg)
+      setSendEmail(true)
+      setShowTfa(true)
+    }
   }
 
 
   return (
     <>
-      <form onSubmit={(e) => { e.preventDefault(); addUser(un, em, pw) }}>
+      <form onSubmit={(e) => { e.preventDefault(); checkEmail(em) }}>
         <h2>Sign Up</h2>
         <div className="label">
           <label>Username:</label>

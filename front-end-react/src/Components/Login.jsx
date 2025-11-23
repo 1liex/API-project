@@ -1,35 +1,36 @@
 import { useState } from "react"
 
 
-export default function Login({ setShowTfa }) {
+export default function Login({ setShowTfa, setTempId, setSendEmail }) {
     const [un, setUn] = useState("")
     const [pw, setPw] = useState("")
+    const [showPw, setShowPw] = useState("password")
 
 
     async function login(username, password) {
         if (un === "" || pw === "") {
-            alert("no empty")
+            alert("Entrys should not be empty")
             return
         }
 
-        const res = await fetch("http://127.0.0.1:5000/tfa", {
+        const res = await fetch("http://127.0.0.1:5000/tfa_login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({ username, password })
         })
         const data = await res.json()
-
         if (data.msg === "Verification code has been sent") {
             alert(data.msg)
+            setSendEmail(false)
             setShowTfa(true)
+            setTempId(data.temp_id)
         } else {
             alert(data.msg)
         }
 
     }
 
-    const [showPw, setShowPw] = useState("password")
     return (
 
         <>

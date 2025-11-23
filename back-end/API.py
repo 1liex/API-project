@@ -16,9 +16,7 @@ from email.mime.multipart import MIMEMultipart
 
 #===== FUNCTINS ======
 
-Verification_code = ""
-username_global = ""
-user_id = ""
+tfa_codes = {}
 
 # db section ======
 
@@ -75,7 +73,9 @@ def create_env_file() -> None:
         with open(ENV_PATH, "w") as f:
             secret_key = create_secret_key()
             f.write(f'SECRET_KEY="{secret_key}"\n \
-            WP_SECRET_PASSWORD="put ur wp secret password"')
+                WP_SECRET_PASSWORD="put ur wp secret password"\n \
+                EMAIL="add ur email"\n \
+                EMAIL_PASS_KEY="add ur app key"')
 
     
     with open(ENV_PATH, "r") as f:
@@ -84,7 +84,9 @@ def create_env_file() -> None:
             with open(ENV_PATH, "w") as f:
                 secret_key = create_secret_key()
                 f.write(f'SECRET_KEY="{secret_key}"\n \
-                WP_SECRET_PASSWORD="put ur wp secret password"')
+                WP_SECRET_PASSWORD="put ur wp secret password"\n \
+                EMAIL="add ur email"\n \
+                EMAIL_PASS_KEY="add ur app key"')
 
 
 #load secret key
@@ -102,7 +104,7 @@ def two_factor_authentication():
 
     list_num = [i for i in range(0, 10)]
     digits = [] 
-    for _ in range(6):
+    for _ in range(2):
         num = str(random.choice(list_num))
         digits.append(num) 
         
@@ -111,21 +113,19 @@ def two_factor_authentication():
 
 
 
-def send_email(email):
-    global Verification_code
+def send_email(email, code):
+    
     load_dotenv()
     my_email = os.getenv("EMAIL")
     pass_key = os.getenv("EMAIL_PASS_KEY")
     resev_email = email
     
     subject = "2FA"
-    Verification_code = two_factor_authentication()
-    
     msg = MIMEMultipart()
     msg['From'] = my_email
     msg["To"] = resev_email
     msg['Subject'] = subject
-    msg.attach(MIMEText(Verification_code, 'plain'))
+    msg.attach(MIMEText(code, 'plain'))
     
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
@@ -154,27 +154,28 @@ jwt = JWTManager(app)
 
 #==== ROUTES =====
 
-
-
 @app.post("/login")
 def login():
     """login, need username and password so it will be post method"""
-    # {"Verification": 123456}
+    # {"Verification": 123456, "temp_id": "....."}
     user_data = request.get_json()
 
-    user_Verification = user_data.get("Verification")
 
+    user_Verification = user_data.get("Verification")
+    temp_id = user_data.get("temp_id")
+    Verification_code = tfa_codes[temp_id]
+    tfa_codes.pop(temp_id)
     if user_Verification == Verification_code:
-        access_token = create_access_token(identity=str(user_id))
+        access_token = create_access_token(identity=str(temp_id))
         res = jsonify({"msg": "log in successful"})
         set_access_cookies(res, access_token)
         return res
         
     return jsonify({"msg": "Verification is worg"})            
 
-@app.post("/tfa")
-def get_tfa():
-    global username_global, user_id
+@app.post("/tfa_login")
+def tfa_login():
+    
     #{"un": "ali", "pw": "123"}
     user_data = request.get_json()
     username = user_data.get("username")
@@ -184,10 +185,11 @@ def get_tfa():
     data = get_data_db()
     for data_db in data:
         if username == data_db.get("username") and password == data_db.get("password"):
-            username_global = username
-            user_id = data_db.get("id")
-            msg =  send_email(data_db.get("email"))
-            return jsonify({"msg": msg})
+            temp_id = str(data_db.get("id"))
+            v_code = two_factor_authentication()
+            tfa_codes[temp_id] = v_code
+            msg =  send_email(data_db.get("email"), v_code)
+            return jsonify({"msg": msg, "temp_id": temp_id})
 
     return jsonify({"msg": "username or password is wrong"})
 
@@ -196,49 +198,62 @@ def get_tfa():
 @jwt_required()
 def logout():
     """logout, need nothing so it will be get method"""
-    res = jsonify({"msg": "logput successful"})
+    res = jsonify({"msg": "logout successful"})
     unset_access_cookies(res)
     return res
 
 
 
+
+@app.post("/tfa_signup")
+def tfa_signup():
+    # {"email": "abc@gmail.com"}
+    user_email = request.get_json().get("email")
+    v_code = two_factor_authentication()
+    tfa_codes[user_email] = v_code
+    print(tfa_codes)
+    msg = send_email(user_email, v_code)
+    return jsonify({"msg": msg})
+
+
 @app.post("/signup")
 def sign_up():
-    """signup, need username my_email and password so it will be post method"""
-    #{"un": "abc", "my_email": "abc@gmail.com", "pw": "123"}
+    """signup, need username email and password so it will be post method"""
+    #{"un": "abc", "my_email": "abc@gmail.com", "pw": "123", "Verification": "42626"}
     user_data = request.get_json()
 
     username = user_data.get("username")
-    my_email = user_data.get("my_email")
+    email = user_data.get("email")
     password = user_data.get("password")
+    user_Verification = user_data.get("user_Verification")
 
+    Verification_code = tfa_codes[email]
+    tfa_codes.pop(email)
+    if user_Verification == Verification_code:
 
-    users_db = get_data_db()
-    new_id = 1
-    if users_db:
-        new_id = users_db[-1]["id"] + 1
-    
-
-    for user in users_db:
-        if username == user["username"] or my_email == user["my_email"]:
-            return jsonify({"msg": "user exist"})
-    
-
-    new_data = {
-        "id": new_id,
-        "username": username,
-        "my_email": my_email,
-        "password": password,
-        "post": [
-            {
-            "post_id": 1,
-            "post_title": "this is post 1"
-            }
-        ]
-    }
-    add_data_db(new_data)
-    return jsonify({"msg": "add user successfuly"})
-
+        users_db = get_data_db()
+        new_id = 0
+        if users_db:
+            for user in users_db:
+                if username == user["username"] or email == user["email"]:
+                    return jsonify({"msg": "user exist"})
+            new_id = len(users_db) + 1
+        
+        new_data = {
+            "id": new_id,
+            "username": username,
+            "email": email,
+            "password": password,
+            "post": [
+                {
+                "post_id": 1,
+                "post_title": "this is post 1"
+                }
+            ]
+        }
+        add_data_db(new_data)
+        return jsonify({"msg": "user has been added successfully"})
+    return jsonify({"msg": "Verification code is not correct"})
 
 @app.get("/get_data")
 @jwt_required()

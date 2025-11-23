@@ -27,7 +27,7 @@ export default function Header({ islogin, setCurrentPage, setUserLogin, username
       {openMenu === true && <MenuOp setUserLogin={setUserLogin} username={username} serOpenMenu={setOpenMenu} />}
 
     </>
-  } else {
+  } else if (islogin === false) {
 
     contetn = <div>
       <button onClick={() => setCurrentPage("login")} className="navBtn login">
