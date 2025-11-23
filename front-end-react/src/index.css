@@ -274,6 +274,8 @@ label {
 
 .card-post-container h3 {
   margin: 1.5em 0;
+  display: flex;
+  justify-content: center;
 }
 
 .card-post-container p {
