@@ -239,14 +239,14 @@ def sign_up():
                 if username == user["username"] or email == user["email"]:
                     return jsonify({"msg": "user exist"})
             new_id = len(users_db) + 1
-        post = WP_REQUSET()
+        # post = WP_REQUSET()
         new_data = {
             "id": new_id,
             "username": username,
             "email": email,
             "password": password,
             "post": [
-                post.get_from_wp()
+                # post.get_from_wp()
             ]
         }
         add_data_db(new_data)
