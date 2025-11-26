@@ -23,4 +23,4 @@ class WP_REQUSET:
                 "modified_gmt": f"{i.get("modified_gmt")}"
             }
 
-        return json.dumps(posts_info, indent=4)
+        return posts_info
