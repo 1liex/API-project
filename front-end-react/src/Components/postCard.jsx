@@ -8,12 +8,11 @@ export default function PostCard({ data }) {
     console.log(data)
     return (
         <div className='container'>
-            {/* <FontAwesomeIcon icon={faImage} /> */}
             {data.post.map((el) => {
                 return (
-                    <div className='post-container' key={el.id}>
+                    <div className='post-container card-post-container' key={el.id}>
                         <div className='img-container'>
-                            <img src={el.featured_media} className='post-img' />
+                            <img src={el.featured_media === "None" ? "/image-not-found.png" : el.featured_media} className='post-img' />
                         </div>
                         <div className='text-container'>
                             <h2>{el.title}</h2>

@@ -16,6 +16,7 @@ export default function TwoFA({ setUserLogin, setShowTfa, checkLogin, tempId, se
       if (data.msg === "log in successful") {
         setUserLogin(true)
         setShowTfa(false)
+        checkLogin()
       }
     } else if (sendEmil === true) {
       const res = await fetch("http://127.0.0.1:5000/signup", {

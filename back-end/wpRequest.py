@@ -2,25 +2,49 @@ import requests
 import json
 
 class WP_REQUSET:
+    
+    def get_posts(self, post_ids: list) -> list:
+        """Using this method will return every post you create by passing the id of the post"""
+        list_post = []
+        for post in post_ids:
+            
 
-    def get_from_wp(self) -> list:
-        """it will send requset to the wordPress api and get the info of the posts"""
-        url = "http://localhost/wordpress/wp-json/wp/v2/posts"
-
-        res = requests.get(url)
-        print(res)
-        data = res.json()
-        print(json.dumps(data, indent=4))
-        for i in data:
-            res_img = requests.get(f"http://localhost/wordpress/wp-json/wp/v2/media/{i.get("featured_media")}")
+            res = requests.get(f"http://localhost/wordpress/wp-json/wp/v2/posts/{post}")
+            
+            post = res.json()
+            res_img = requests.get(f"http://localhost/wordpress/wp-json/wp/v2/media/{post.get("featured_media")}")
             img = res_img.json() 
             posts_info = {
-                "id": i.get("id"),
-                "title": i["title"].get("rendered"),
-                "link": i.get("link"),
-                "content": i["content"].get("rendered"),
-                "featured_media": f"{img.get("link")}",
-                "modified_gmt": f"{i.get("modified_gmt")}"
+            "id": post.get("id"),
+            "title": post["title"].get("rendered"),
+            "link": post.get("link"),
+            "content": post["content"].get("rendered"),
+            "featured_media": f"{img.get("link")}",
+            "modified_gmt": f"{post.get("modified_gmt")}"
             }
 
-        return posts_info
+            list_post.append(posts_info)
+        return list_post
+    
+    def add_post(self, title:str, content:str, img:str = None, status:str = "publish") -> int:
+        """Using this method will create posts by passing some values and it will return the id of the post
+        you create"""
+       
+        usrename = ""
+        app_key = ""
+
+        # if there is img 
+        if not img:
+            url = "http://localhost/wordpress/wp-json/wp/v2/posts"
+            data = {
+                "title": title,
+                "content": content,
+                "status": status
+            }
+            res = requests.post(url, json=data, auth=(usrename, app_key))
+            if res.status_code == 201:
+                wp_res = res.json()
+                return wp_res.get("id")
+
+            else:
+                print("error", res.status_code, res.text)

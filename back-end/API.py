@@ -69,14 +69,17 @@ def create_env_file() -> None:
         s_key = str(uuid.uuid4())
         return s_key
 
+    secret_key = create_secret_key()
+    write_data = f'SECRET_KEY="{secret_key}"\n \
+                WP_SECRET_PASSWORD="put ur wp secret password"\n \
+                EMAIL="testapiproject69@gmail.com"\n \
+                EMAIL_PASS_KEY="kelzcctxtlcqjaan"\n \
+                USERNAME="enter ur wp username"'
 
     if not os.path.exists(ENV_PATH):
         with open(ENV_PATH, "w") as f:
-            secret_key = create_secret_key()
-            f.write(f'SECRET_KEY="{secret_key}"\n \
-                WP_SECRET_PASSWORD="put ur wp secret password"\n \
-                EMAIL="add ur email"\n \
-                EMAIL_PASS_KEY="add ur app key"')
+            
+            f.write(write_data)
 
     
     with open(ENV_PATH, "r") as f:
@@ -84,10 +87,7 @@ def create_env_file() -> None:
         if not data:
             with open(ENV_PATH, "w") as f:
                 secret_key = create_secret_key()
-                f.write(f'SECRET_KEY="{secret_key}"\n \
-                WP_SECRET_PASSWORD="put ur wp secret password"\n \
-                EMAIL="add ur email"\n \
-                EMAIL_PASS_KEY="add ur app key"')
+                f.write(write_data)
 
 
 #load secret key
@@ -212,7 +212,6 @@ def tfa_signup():
     user_email = request.get_json().get("email")
     v_code = two_factor_authentication()
     tfa_codes[user_email] = v_code
-    print(tfa_codes)
     msg = send_email(user_email, v_code)
     return jsonify({"msg": msg})
 
@@ -233,20 +232,19 @@ def sign_up():
     if user_Verification == Verification_code:
 
         users_db = get_data_db()
-        new_id = 1
+        new_id = 0
         if users_db:
             for user in users_db:
                 if username == user["username"] or email == user["email"]:
                     return jsonify({"msg": "user exist"})
             new_id = len(users_db) + 1
-        post = WP_REQUSET()
         new_data = {
             "id": new_id,
             "username": username,
             "email": email,
             "password": password,
-            "post": [
-                post.get_from_wp()
+            "post_ids": [
+                
             ]
         }
         add_data_db(new_data)
@@ -262,7 +260,9 @@ def get_data():
     db_users = get_data_db()
     for user in db_users:
         if int(id) == user["id"]:
-            return jsonify({"name": user["username"],"post": user["post"]})
+            wp = WP_REQUSET()
+            post = wp.get_posts(user["post_ids"])
+            return jsonify({"name": user["username"],"post": post})
         
     return jsonify({"msg": "no data found"})
 
