@@ -1,6 +1,6 @@
 
 
-export default function AddPostContainer({ data }) {
+export default function AddPostContainer({ data,  setShowAddPost}) {
     console.log(data)
     return (
         <>
@@ -16,7 +16,7 @@ export default function AddPostContainer({ data }) {
                             )
                         })}
                     </div>
-                    <button className="add-post-btn">Add post</button>
+                    <button className="add-post-btn" onClick={()=>{setShowAddPost(true)}}>Add post</button>
 
                 </div>
             </div>

@@ -4,17 +4,20 @@ import PostCard from "./postCard"
 import About from "./About"
 import AddPostContainer from "./AddPostContainer"
 import { useState } from "react"
+import AddPostInfo from './AddPostInfo'
 
 
 
-export default function Homepage({ data , header, setHeader, showInfoCards, setShowInfoCards, showAboutContent}) {
-       const [showAddPost, setShowAddPost] =  useState(false)
+export default function Homepage({ data, header, setHeader, showInfoCards, setShowInfoCards, showAboutContent }) {
+    const [showAddPost, setShowAddPost] = useState(false)
+    console.log(showAddPost)
     return (
         <>
             <h1 className="homePage">{header}</h1>
-            {header === "Show posts" && <PostCard data={data}/>}
-            {header === "Add post" && <AddPostContainer data={data}/>}
-            {showInfoCards === true && <InfoCard setHeader={setHeader} setShowInfoCards={setShowInfoCards}/>}
+            {header === "Show posts" && <PostCard data={data} />}
+            {showAddPost === true && <AddPostInfo setShowAddPost={setShowAddPost} />}
+            {header === "Add post" && <AddPostContainer data={data} setShowAddPost={setShowAddPost} />}
+            {showInfoCards === true && <InfoCard setHeader={setHeader} setShowInfoCards={setShowInfoCards} />}
             {showAboutContent === true && <About />}
         </>
     )
