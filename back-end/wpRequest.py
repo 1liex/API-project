@@ -30,7 +30,7 @@ class WP_REQUSET:
             list_post.append(posts_info)
         return list_post
     
-    def add_post(self, title:str, content:str, img:str = None, status:str = "publish") -> int:
+    def add_post(self, title:str, content:str, img:str = None, status:str = "private") -> int:
         """Using this method will create posts by passing some values and it will return the id of the post
         you create"""
        

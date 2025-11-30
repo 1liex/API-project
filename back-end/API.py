@@ -274,7 +274,16 @@ def get_data():
 @jwt_required()
 def add_data():
     """add data, need the data u want to add so it will be post method"""
-    pass
+    json_data = request.form.get("json")
+    data = json.load(json_data)
+
+    img = request.files.get("img")
+    print(img, data)
+    load_dotenv()
+    username = os.getenv("USERNAME")
+    application_password = os.getenv("WP_SECRET_PASSWORD")
+    wp = WP_REQUSET(username, application_password)
+    wp.add_post()
 
 if __name__ == "__main__":
     app.run(debug=True)
