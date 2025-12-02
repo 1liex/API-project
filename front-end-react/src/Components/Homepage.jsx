@@ -8,14 +8,13 @@ import AddPostInfo from './AddPostInfo'
 
 
 
-export default function Homepage({ data, header, setHeader, showInfoCards, setShowInfoCards, showAboutContent }) {
+export default function Homepage({ data, header, setHeader, showInfoCards, setShowInfoCards, showAboutContent, refresh }) {
     const [showAddPost, setShowAddPost] = useState(false)
-    console.log(showAddPost)
     return (
         <>
             <h1 className="homePage">{header}</h1>
             {header === "Show posts" && <PostCard data={data} />}
-            {showAddPost === true && <AddPostInfo setShowAddPost={setShowAddPost} />}
+            {showAddPost === true && <AddPostInfo setShowAddPost={setShowAddPost} refresh={refresh} />}
             {header === "Add post" && <AddPostContainer data={data} setShowAddPost={setShowAddPost} />}
             {showInfoCards === true && <InfoCard setHeader={setHeader} setShowInfoCards={setShowInfoCards} />}
             {showAboutContent === true && <About />}

@@ -17,7 +17,7 @@ from wpRequest import WP_REQUSET
 
 #===== FUNCTINS ======
 
-tfa_codes = {}
+tem_data = {}
 
 # db section ======
 
@@ -74,7 +74,7 @@ def create_env_file() -> None:
                 WP_SECRET_PASSWORD="put ur wp secret password"\n \
                 EMAIL="testapiproject69@gmail.com"\n \
                 EMAIL_PASS_KEY="kelzcctxtlcqjaan"\n \
-                USERNAME="enter ur wp username"'
+                WP_USERNAME="enter ur wp username"'
 
     if not os.path.exists(ENV_PATH):
         with open(ENV_PATH, "w") as f:
@@ -147,6 +147,8 @@ app.config["JWT_SECRET_KEY"] = load_secret_key()
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_COOKIE_SAMESITE"] = "None"
 app.config["JWT_COOKIE_SECURE"] = "True"
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+
 
 
 CORS(app, supports_credentials=True)
@@ -164,8 +166,8 @@ def login():
 
     user_Verification = user_data.get("Verification")
     temp_id = user_data.get("temp_id")
-    Verification_code = tfa_codes[temp_id]
-    tfa_codes.pop(temp_id)
+    Verification_code = tem_data[temp_id]
+    tem_data.pop(temp_id)
     if user_Verification == Verification_code:
         access_token = create_access_token(identity=str(temp_id))
         res = jsonify({"msg": "log in successful"})
@@ -188,7 +190,7 @@ def tfa_login():
         if username == data_db.get("username") and password == data_db.get("password"):
             temp_id = str(data_db.get("id"))
             v_code = two_factor_authentication()
-            tfa_codes[temp_id] = v_code
+            tem_data[temp_id] = v_code
             msg =  send_email(data_db.get("email"), v_code)
             return jsonify({"msg": msg, "temp_id": temp_id})
 
@@ -211,7 +213,7 @@ def tfa_signup():
     # {"email": "abc@gmail.com"}
     user_email = request.get_json().get("email")
     v_code = two_factor_authentication()
-    tfa_codes[user_email] = v_code
+    tem_data[user_email] = v_code
     msg = send_email(user_email, v_code)
     return jsonify({"msg": msg})
 
@@ -227,8 +229,8 @@ def sign_up():
     password = user_data.get("password")
     user_Verification = user_data.get("user_Verification")
 
-    Verification_code = tfa_codes[email]
-    tfa_codes.pop(email)
+    Verification_code = tem_data[email]
+    tem_data.pop(email)
     if user_Verification == Verification_code:
 
         users_db = get_data_db()
@@ -243,7 +245,7 @@ def sign_up():
             "username": username,
             "email": email,
             "password": password,
-            "post_ids": [
+            "post": [
                 
             ]
         }
@@ -260,30 +262,49 @@ def get_data():
     db_users = get_data_db()
     for user in db_users:
         if int(id) == user["id"]:
-            load_dotenv()
-            username = os.getenv("USERNAME")
-            application_password = os.getenv("WP_SECRET_PASSWORD")
-            wp = WP_REQUSET(username, application_password)
-            post = wp.get_posts(user["post_ids"])
-            return jsonify({"name": user["username"],"post": post})
+            
+            return jsonify({"name": user["username"],"post": user["post"]})
         
     return jsonify({"msg": "no data found"})
 
 
 @app.post("/add_data")
 @jwt_required()
-def add_data():
+def add_data_json():
     """add data, need the data u want to add so it will be post method"""
-    json_data = request.form.get("json")
-    data = json.load(json_data)
-
+    #{"title": "abc", "content": "abc", "status": "publish"}
+    data = request.form.get("json")
+    json_data = json.loads(data)
     img = request.files.get("img")
-    print(img, data)
-    load_dotenv()
-    username = os.getenv("USERNAME")
-    application_password = os.getenv("WP_SECRET_PASSWORD")
-    wp = WP_REQUSET(username, application_password)
-    wp.add_post()
+    user_id = get_jwt_identity()
+    
+    if not img:
+        title = json_data.get("title")
+        content = json_data.get("content")
+        status = json_data.get("status")
 
+        load_dotenv()
+        username = os.getenv("WP_USERNAME")
+
+        app_password = os.getenv("WP_SECRET_PASSWORD")
+        wp = WP_REQUSET(username, app_password)
+        new_post = wp.add_post(title, content, status)
+
+        if new_post:
+            data_db = get_data_db()
+
+            for user in data_db:
+                if user["id"] == int(user_id):
+                    user["post"].append(new_post)
+                    
+            with open(DB_PATH, "w") as f:
+                json.dump(data_db, f, indent=4)
+                    
+                    
+            return jsonify({"msg": "post added"})
+        
+        return jsonify({"msg": "Something went wrong"})
+
+    
 if __name__ == "__main__":
     app.run(debug=True)

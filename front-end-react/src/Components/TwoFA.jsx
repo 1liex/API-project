@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function TwoFA({ setUserLogin, setShowTfa, checkLogin, tempId, setCurrentPage, sendEmil, un, em, pw }) {
+export default function TwoFA({ setUserLogin, setShowTfa, checkLogin, tempId, setCurrentPage, sendEmil, un, em, pw, setHeader, setShowInfoCards }) {
   const [vCode, setVcode] = useState("")
 
   async function Verification(v) {
@@ -14,9 +14,11 @@ export default function TwoFA({ setUserLogin, setShowTfa, checkLogin, tempId, se
 
       const data = await res.json()
       if (data.msg === "log in successful") {
+        setHeader("Home page")
+        setShowInfoCards(true)
+        checkLogin()
         setUserLogin(true)
         setShowTfa(false)
-        checkLogin()
       }
     } else if (sendEmil === true) {
       const res = await fetch("http://127.0.0.1:5000/signup", {

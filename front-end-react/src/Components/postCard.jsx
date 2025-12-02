@@ -1,6 +1,4 @@
-import React from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faImage } from '@fortawesome/free-solid-svg-icons'
+
 export default function PostCard({ data }) {
     if (!data || !data.post) {
         return <p>Loading...</p>
@@ -8,9 +6,12 @@ export default function PostCard({ data }) {
     console.log(data)
     return (
         <div className='container'>
-            {data.post.map((el) => {
-                return (
-                    <div className='post-container card-post-container' key={el.id}>
+
+            {data.post.length === 0 ? (<h2 className="no-post">No Post</h2>) : (
+
+                data.post.map((el) => (
+
+                    <div className='post-container card-post-container' key={el.post_id}>
                         <div className='img-container'>
                             <img src={el.featured_media === "None" ? "/image-not-found.png" : el.featured_media} className='post-img' />
                         </div>
@@ -21,9 +22,9 @@ export default function PostCard({ data }) {
                             <a href={el.link} className='view-post-btn' target='_blank'>View</a>
                         </div>
                     </div>
-                )
-            })}
 
+                ))
+            )}
 
         </div>
     )
