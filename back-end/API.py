@@ -263,7 +263,7 @@ def get_data():
     for user in db_users:
         if int(id) == user["id"]:
             
-            return jsonify({"name": user["username"],"post": user["post"]})
+            return jsonify({"name": user["username"],"post": user["post"], "user": user["user"]})
         
     return jsonify({"msg": "no data found"})
 

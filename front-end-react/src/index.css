@@ -251,6 +251,10 @@ label {
   justify-content: center;
 }
 
+.addPostContainer{
+  flex-direction: column;
+  align-items: center;
+}
 .container:has(.card-post-container:hover) .card-post-container:not(:hover) {
   filter: blur(4px);
   opacity: 0.5;
@@ -459,6 +463,17 @@ div {
     0 0 10px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease-in-out;
 }
+.post-text-contanier{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: start;
+  margin: 0;
+}
+
+.text-email{
+  color: gray;
+}
 
 .post:hover {
   transform: scale(1.02);
@@ -555,5 +570,24 @@ textarea {
 }
 
 #x {
+  cursor: pointer;
+}
+
+
+.select-container{
+  width: 50%;
+  display: flex;
+  justify-content: end;
+  margin: 0;
+}
+
+.select{
+  color: white;
+  background-color: #282c34;
+  border: none;
+}
+
+.select:focus, .select:hover{
+  outline: none;
   cursor: pointer;
 }

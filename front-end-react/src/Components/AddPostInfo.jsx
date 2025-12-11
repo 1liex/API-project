@@ -65,7 +65,7 @@ export default function AddPostInfo({ setShowAddPost, refresh }) {
         </label>
 
         <div className='Publish'>
-          <input type="checkbox" onChange={() => { setPublish("publish") }} />
+          <input type="checkbox" onChange={(e) => {setPublish( e.target.checked ? "publish" : "private")}} />
           <p>Publish?</p>
         </div>
         <button className='navBtn add' onClick={() => handleJsonData()}>Add</button>
