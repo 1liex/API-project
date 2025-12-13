@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 
 class WP_REQUSET:
     def __init__(self, username, application_password):
@@ -7,19 +8,20 @@ class WP_REQUSET:
         self.application_password = application_password
 
     
-    def add_post(self, title:str, content:str, img:str = None, status:str = None) -> dict:
+    def add_post(self, title:str, content:str, img = None, status:str = None) -> dict:
         """Using this method will create posts by passing some values and it will 
         return dict with some data of the post like (id, time post created, title post, content, link of the post...)"""
        
         # if there is img 
         if not img:
-            url = "http://localhost/wordpress/wp-json/wp/v2/posts"
+
+            media_url = "http://localhost/wordpress/wp-json/wp/v2/posts"
             data = {
                 "title": title,
                 "content": content,
                 "status": status
             }
-            res = requests.post(url, json=data, auth=(self.username, self.application_password))
+            res = requests.post(media_url, json=data, auth=(self.username, self.application_password))
             if res.status_code == 201:
                 wp_res = res.json()
                 post = {
@@ -31,19 +33,75 @@ class WP_REQUSET:
                     "link": wp_res.get("link")
                 }
                 return post
-
-            if img:
-                # if there
-                pass
-
             print("error", res.status_code, res.text)
+
+
+        if img:
+
+            media_url = "http://localhost/wordpress/wp-json/wp/v2/media"
+            with open(img, 'rb') as img_file:
+                img_data = img_file.read()
+
+            filename = os.path.basename(img) 
+            print(filename)
+            if filename.lower().endswith(('.png')):
+                content_type = 'image/png'
+            else:
+                content_type = 'image/jpeg'
+
+            headers = {
+        "Content-Type": content_type,
+        "Content-Disposition": f"attachment; filename={filename}"
+            }
+
+        response = requests.post(
+        media_url,
+        data=img_data,
+        headers=headers,
+        auth=(self.username, self.application_password)
+        )
+
+
+        img_id = response.json().get("id")
+
+        add_post_url = "http://localhost/wordpress/wp-json/wp/v2/posts"
+
+        data = {
+                "title": title,
+                "content": content,
+                "status": status,
+                "featured_media": img_id
+            }
+        
+        media_res = requests.get(f"http://localhost/wordpress/wp-json/wp/v2/media/{img_id}")
+        img_json = media_res.json()
+        img_link = img_json.get("link")
+
+            
+        
+        res = requests.post(add_post_url, json=data, auth=(self.username, self.application_password))
+        if res.status_code == 201:
+            wp_res = res.json()
+            post = {
+                    "post_id": wp_res["id"],
+                    "featured_media": "None",
+                    "title": wp_res["title"].get("rendered"),
+                    "content": wp_res["content"].get("rendered"),
+                    "modified_gmt": wp_res.get("modified_gmt"),
+                    "link": wp_res.get("link"),
+                    "featured_media": img_link
+                }
+            
+            return post
+
+            
 
     def del_post(self, post_id: int) -> list:
         """using this method will let u delete any post with it's id and it will return
          list with id and status of the post was deleted"""
-        url = f"http://localhost/wordpress/wp-json/wp/v2/posts/{post_id}"
+        media_url = f"http://localhost/wordpress/wp-json/wp/v2/posts/{post_id}"
         res = requests.delete(
-            url,
+            media_url,
             auth=(self.username, self.application_password)
         )
         if res.status_code == 200:
@@ -60,7 +118,7 @@ class WP_REQUSET:
         """using this method will let u create user and it will
           return some data of the user was created as dict"""
         
-        url = "http://localhost/wordpress/wp-json/wp/v2/users"
+        media_url = "http://localhost/wordpress/wp-json/wp/v2/users"
 
         new_user_in_wp = {
             "username": wp_username,
@@ -69,7 +127,7 @@ class WP_REQUSET:
         }
 
         res = requests.post(
-            url,
+            media_url,
             auth=(self.username, self.application_password),
             json=new_user_in_wp
             )
@@ -89,11 +147,11 @@ class WP_REQUSET:
         """using this method will let u delete user by the id of this user and
         it will return True if the user deleted"""
 
-        url = f"http://localhost/wordpress/wp-json/wp/v2/users/{user_id}?reassign=1&force=true"
+        media_url = f"http://localhost/wordpress/wp-json/wp/v2/users/{user_id}?reassign=1&force=true"
         
     
 
-        res = requests.delete(url,
+        res = requests.delete(media_url,
                                auth=(self.username, self.application_password)
                                )
 

@@ -28,10 +28,8 @@ export default function Login({ setShowTfa, setTempId, setSendEmail }) {
         const data = await res.json()
         if (data.msg === "Verification code has been sent") {
             setSendEmail(false)
-            setTimeout(() => {
-                setShowTfa(true)
-                setTempId(data.temp_id)
-            }, 4000)
+            setShowTfa(true)
+            setTempId(data.temp_id)
         } else {
             setShowLoadingIcon(false)
             alert(data.msg)

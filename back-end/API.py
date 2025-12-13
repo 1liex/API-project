@@ -23,6 +23,8 @@ tem_data = {}
 
 # path of the db (json)
 DB_PATH = "db/data.json"
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 #create the db
 def create_db_json() -> None: 
@@ -89,6 +91,7 @@ def create_env_file() -> None:
                 secret_key = create_secret_key()
                 f.write(write_data)
 
+    
 
 #load secret key
 def load_secret_key() -> str:
@@ -275,21 +278,30 @@ def get_data():
 @jwt_required()
 def add_post():
     """add post, need the data u want to add so it will be post method"""
+
+    user_id = get_jwt_identity()
+
     #{"title": "abc", "content": "abc", "status": "publish"}
     data = request.form.get("json")
     json_data = json.loads(data)
     img = request.files.get("img")
-    user_id = get_jwt_identity()
     
-
+    if img:
+        save_path = os.path.join(UPLOAD_FOLDER, img.filename)
+        img.save(save_path)
+    else:
+        save_path = None
     title = json_data.get("title")
     content = json_data.get("content")
     status = json_data.get("status")
+
     load_dotenv()
     username = os.getenv("WP_USERNAME")
     app_password = os.getenv("WP_SECRET_PASSWORD")
     wp = WP_REQUSET(username, app_password)
-    new_post = wp.add_post(title, content, status=status, img=img)
+
+    new_post = wp.add_post(title, content, status=status, img=save_path)
+    print(new_post)
     if new_post:
         data_db = get_data_db()
         for user in data_db:
