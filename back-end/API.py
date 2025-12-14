@@ -14,21 +14,20 @@ from email.mime.multipart import MIMEMultipart
 from wpRequest import WP_REQUSET
 
 
-
 #===== FUNCTINS ======
 
-tem_data = {}
+tem_data = {} # temporary vars like 2fa code
 
 # db section ======
 
 # path of the db (json)
-DB_PATH = "db/data.json"
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+DB_PATH = "db/data.json" # path of the json db
+UPLOAD_FOLDER = "uploads" # path of folder will hold imgs
+os.makedirs(UPLOAD_FOLDER, exist_ok=True) # create the (uploads) floder
 
 #create the db
 def create_db_json() -> None: 
-    """create the db (json)"""
+    """create the db (json) if it's not exist"""
     if not os.path.exists(DB_PATH):
         with open(DB_PATH, "w") as f:
             json.dump([], f, indent=4)
@@ -49,7 +48,7 @@ def get_data_db() -> list:
 
 #add data to db
 def add_data_db(data: dict) -> None: 
-    """add data to the db (json)"""
+    """add data to the db (json) like new user"""
     
     create_db_json()
 
@@ -63,36 +62,36 @@ def add_data_db(data: dict) -> None:
 #create env
 def create_env_file() -> None:
     """make sure there is env file and it is not empty
-    and cteate the secret key"""
+    and create the secret key"""
     ENV_PATH = ".env"
 
 
     def create_secret_key():
+        # create key for jwt
         s_key = str(uuid.uuid4())
         return s_key
 
     secret_key = create_secret_key()
+    #shape of the data will be in the env
     write_data = f'SECRET_KEY="{secret_key}"\n \
                 WP_SECRET_PASSWORD="put ur wp secret password"\n \
                 EMAIL="testapiproject69@gmail.com"\n \
                 EMAIL_PASS_KEY="kelzcctxtlcqjaan"\n \
                 WP_USERNAME="enter ur wp username"'
 
+    # if env file not exist create one
     if not os.path.exists(ENV_PATH):
         with open(ENV_PATH, "w") as f:
-            
             f.write(write_data)
-
     
+    # if env file exits but no data fill it with data
     with open(ENV_PATH, "r") as f:
         data = f.read()
         if not data:
             with open(ENV_PATH, "w") as f:
-                secret_key = create_secret_key()
                 f.write(write_data)
 
     
-
 #load secret key
 def load_secret_key() -> str:
     """return the secret key as str"""
@@ -103,7 +102,8 @@ def load_secret_key() -> str:
 
 
 #2FA section ======
-def two_factor_authentication():
+def two_factor_authentication() -> str:
+    """create the 2fa code and return it as str"""
     import random
 
     list_num = [i for i in range(0, 10)]
@@ -116,9 +116,8 @@ def two_factor_authentication():
     return tfa 
 
 
-
-def send_email(email, code):
-    
+def send_email(email, code) -> str:
+    """send the 2fa to email and return messge of the prosses"""
     load_dotenv()
     my_email = os.getenv("EMAIL")
     pass_key = os.getenv("EMAIL_PASS_KEY")
@@ -147,11 +146,10 @@ app = Flask(__name__)
 
 # configurations
 app.config["JWT_SECRET_KEY"] = load_secret_key()
-app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"] # where the token should save
 app.config["JWT_COOKIE_SAMESITE"] = "None"
 app.config["JWT_COOKIE_SECURE"] = "True"
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
-
 
 
 CORS(app, supports_credentials=True)
@@ -160,34 +158,35 @@ jwt = JWTManager(app)
 
 #==== ROUTES =====
 
+#======= POST LOGIN METHOD ========
 @app.post("/login")
 def login():
-    """login, need username and password so it will be post method"""
+    """matching the 2fa"""
     # {"Verification": 123456, "temp_id": "....."}
     user_data = request.get_json()
 
-
-    user_Verification = user_data.get("Verification")
+    user_Verification = user_data.get("Verification") #2fa from the user
     temp_id = user_data.get("temp_id")
-    Verification_code = tem_data[temp_id]
-    tem_data.pop(temp_id)
-    if user_Verification == Verification_code:
-        access_token = create_access_token(identity=str(temp_id))
-        res = jsonify({"msg": "log in successful"})
-        set_access_cookies(res, access_token)
-        return res
-        
-    return jsonify({"msg": "Verification is worg"})            
+    Verification_code = tem_data[temp_id] # getting the 2fa save in the temrorary variable
+    tem_data.pop(temp_id) # remove the 2fa dont want duplicated issues
 
+    if user_Verification == Verification_code: # if user 2fa matched temproray 2fa
+        access_token = create_access_token(identity=str(temp_id)) # create jwt token
+        msg = jsonify({"msg": "log in successful"}) # create message
+        set_access_cookies(msg, access_token) # set the token in cookies
+        return msg # return the message
+        
+    return jsonify({"msg": "Verification is worg"}) # if no match between user and teproray 2fa         
+
+#======= POST LOGIN 2FA CODE METHOD ========
 @app.post("/tfa_login")
 def tfa_login():
-    
+    """create the 2fa code and send it to the email connected with the same password and username"""
     #{"un": "ali", "pw": "123"}
     user_data = request.get_json()
     username = user_data.get("username")
     password = user_data.get("password")
 
-    
     data = get_data_db()
     for data_db in data:
         if username == data_db.get("username") and password == data_db.get("password"):
@@ -199,18 +198,16 @@ def tfa_login():
 
     return jsonify({"msg": "username or password is wrong"})
 
-
+#======= GET LOGOUT METHOD ========
 @app.get("/logout")
 @jwt_required()
 def logout():
-    """logout, need nothing so it will be get method"""
+    """delete the token in the cookies"""
     res = jsonify({"msg": "logout successful"})
     unset_access_cookies(res)
     return res
 
-
-
-
+#======= POST SINGUP 2FA CODE METHOD ========
 @app.post("/tfa_signup")
 def tfa_signup():
     # {"email": "abc@gmail.com"}
@@ -220,7 +217,7 @@ def tfa_signup():
     msg = send_email(user_email, v_code)
     return jsonify({"msg": msg})
 
-
+#======= POST SINGUP METHOD ========
 @app.post("/signup")
 def sign_up():
     """signup, need username email and password so it will be post method"""
@@ -259,6 +256,7 @@ def sign_up():
         return jsonify({"msg": "user has been added successfully"})
     return jsonify({"msg": "Verification code is not correct"})
 
+#======= GET DATA METHOD ========
 @app.get("/get_data")
 @jwt_required()
 def get_data():
@@ -273,36 +271,37 @@ def get_data():
         
     return jsonify({"msg": "no data found"})
 
-
+#======= POST POSTS METHOD ========
 @app.post("/add_post")
 @jwt_required()
 def add_post():
-    """add post, need the data u want to add so it will be post method"""
+    """adding post to local db and wp"""
 
-    user_id = get_jwt_identity()
+    user_id = get_jwt_identity() # getting the user id from the cookies
 
     #{"title": "abc", "content": "abc", "status": "publish"}
-    data = request.form.get("json")
-    json_data = json.loads(data)
-    img = request.files.get("img")
+    data = request.form.get("json") # get the json data as str
+    json_data = json.loads(data) # change the data to json format
+    img = request.files.get("img") # getting the img send it
     
-    if img:
+    if img: # if there is img with the request
         save_path = os.path.join(UPLOAD_FOLDER, img.filename)
         img.save(save_path)
-    else:
+    else: # if no img with the request
         save_path = None
-    title = json_data.get("title")
-    content = json_data.get("content")
-    status = json_data.get("status")
+    title = json_data.get("title") # get the title from the req
+    content = json_data.get("content") # content
+    status = json_data.get("status") # status publish or privet
 
     load_dotenv()
-    username = os.getenv("WP_USERNAME")
+    # get the user name and app password of wordpost
+    username = os.getenv("WP_USERNAME") 
     app_password = os.getenv("WP_SECRET_PASSWORD")
-    wp = WP_REQUSET(username, app_password)
+    wp = WP_REQUSET(username, app_password) # send the username and app password
+    # add new post to wordpress and reurn it is dict
+    new_post = wp.add_post(title, content, save_path, status)
 
-    new_post = wp.add_post(title, content, status=status, img=save_path)
-    print(new_post)
-    if new_post:
+    if new_post: # if ther is response save the post locally
         data_db = get_data_db()
         for user in data_db:
             if user["id"] == int(user_id):
@@ -316,21 +315,25 @@ def add_post():
     
     return jsonify({"msg": "Something went wrong"})
 
+#======= DELETE POSTS METHOD ========
 @app.delete("/delete_post")
 @jwt_required()
 def delete_post():
+    """delete the post from wordpress and local db"""
     data = request.get_json()
-    post_id_to_del = data.get("postIdWatnToDel")
-    user_id = get_jwt_identity()
+    post_id_to_del = data.get("postIdWatnToDel") # post id want to delete
+    user_id = get_jwt_identity() # get user id from the cookies
 
     load_dotenv()
+    # get the user name and app password of wordpost
     username = os.getenv("WP_USERNAME")
     app_password = os.getenv("WP_SECRET_PASSWORD")
-    wp = WP_REQUSET(username, app_password)
-    del_res = wp.del_post(post_id_to_del)
+    wp = WP_REQUSET(username, app_password) # send the username and app password
+    # delete the post from wordpress and return id and status of the post deleted
+    del_res = wp.del_post(post_id_to_del) 
 
-    deleted_post_id = del_res[0]
-    status = del_res[1]
+    deleted_post_id = del_res[0] # id of post was deleted
+    status = del_res[1] # status of post was deleted
 
     if status == "trash":
         data_db = get_data_db()
@@ -352,7 +355,7 @@ def delete_post():
         
     return jsonify({"msg": "Failed to delete post from WordPress."}), 400
     
-
+#======= POST USERS METHOD ========
 @app.post("/add_user")
 @jwt_required()
 def add_user():
@@ -382,7 +385,7 @@ def add_user():
             json.dump(data_db, f, indent=4)
     return jsonify({"msg": add_user_res})
 
-
+#======= DELETE USERS METHOD ========
 @app.delete("/delete_user")
 @jwt_required()
 def delete_user():
@@ -393,18 +396,15 @@ def delete_user():
     data = request.get_json()
     id_user_to_del = data.get("userIdWantTodel")
     
-    
 
     load_dotenv()
     username = os.getenv("WP_USERNAME")
     app_password = os.getenv("WP_SECRET_PASSWORD")
 
     wp = WP_REQUSET(username, app_password)
-    del_res = wp.del_user(id_user_to_del)
+    delete_response = wp.del_user(id_user_to_del)
 
-   
-    if del_res == True:
-
+    if delete_response == True:
         data_db = get_data_db()
         user_deleted_locally = False
 
@@ -424,10 +424,7 @@ def delete_user():
 
         return jsonify({"msg": "User deleted successfully"})
 
-    return jsonify({"msg": del_res})
-
-
-    
+    return jsonify({"msg": delete_response})
 
 
 if __name__ == "__main__":
