@@ -1,6 +1,6 @@
 
 
-export default function Logout({ setUserLogin, serOpenMenu }) {
+export default function Logout({ setUserLogin, setOpenMenu, closAboutUsPage }) {
 
     async function logout() {
         const res = await fetch("http://127.0.0.1:5000/logout",
@@ -12,7 +12,8 @@ export default function Logout({ setUserLogin, serOpenMenu }) {
         const msg = await res.json()
         if (msg.msg === "logout successful") {
             setUserLogin(false)
-            serOpenMenu(false)
+            setOpenMenu(false)
+            closAboutUsPage(false)
         }
     }
 
