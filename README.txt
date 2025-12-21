@@ -1,0 +1,2 @@
+admin dashboard for WordPress to create, delete, show users/posts in WordPress using (React js for the Front-End, Python for the API using flask, json for the DB)
+this admin dashboard aims to how i use React and Python even if the idea of the project not that much 
