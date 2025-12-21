@@ -75,8 +75,8 @@ def create_env_file() -> None:
     #shape of the data will be in the env
     write_data = f'SECRET_KEY="{secret_key}"\n \
                 WP_SECRET_PASSWORD="put ur wp secret password"\n \
-                EMAIL="testapiproject69@gmail.com"\n \
-                EMAIL_PASS_KEY="kelzcctxtlcqjaan"\n \
+                EMAIL="the email will use to send 2fa"\n \
+                EMAIL_PASS_KEY="applaction password for the email used to send 2fa"\n \
                 WP_USERNAME="enter ur wp username"'
 
     # if env file not exist create one
